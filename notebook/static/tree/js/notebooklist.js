@@ -216,7 +216,7 @@ define([
             $('.rename-button').click($.proxy(this.rename_selected, this));
             $('.move-button').click($.proxy(this.move_selected, this));
             $('.download-button').click($.proxy(this.download_selected, this));
-            $('.download-convert-button').click($.proxy(this.download_and_convert, this));
+            $('.convert-download-button').click($.proxy(this.convert_and_download, this));
             $('.shutdown-button').click($.proxy(this.shutdown_selected, this));
             $('.duplicate-button').click($.proxy(this.duplicate_selected, this));
             $('.view-button').click($.proxy(this.view_selected, this));
@@ -711,6 +711,15 @@ define([
             $('.download-button').css('display', 'none');
         }
 
+        // Download and convert is only visible when one or more items are selected, and they are
+        // not a running notebook or a directory
+        // TODO(nhdaly): Add support for download multiple items at once.
+        if (selected.length >= 1 && !has_running_notebook && !has_directory) {
+            $('.convert-download-button').css('display', 'inline-block');
+        } else {
+            $('.convert-download-button').css('display', 'none');
+        }
+
         // Shutdown is only visible when one or more notebooks running notebooks
         // are selected and no non-notebook items are selected.
         if (has_running_notebook && !(has_file || has_directory)) {
@@ -1112,30 +1121,16 @@ define([
         window.open(utils.url_path_join(that.base_url, 'files', utils.encode_uri_components(item_path)) + '?download=1', IPython._target);
     };
 
-    NotebookList.prototype._nbconvert = function (format, download) {
-        download = download || false;
-        var notebook_path = utils.encode_uri_components(this.notebook.notebook_path);
-        var url = utils.url_path_join(
-            this.base_url,
-            'nbconvert',
-            format,
-            notebook_path
-        ) + "?download=" + download.toString();
-
-        this._new_window(url);
-    };
-
-    NotebookList.prototype.download_and_convert = function() {
+    NotebookList.prototype.convert_and_download = function() {
         var that = this;
-
-        // TODO(nhdaly): Support download multiple items at once.
-        if (that.selected.length !== 1){
-            return;
+        var url = utils.url_path_join(that.base_url, 'dlconvert', 'pdf');
+        for (var i in that.selected) {
+            var item = that.selected[i];
+            url = utils.url_path_join(url, utils.encode_uri_components(item.path));
         }
-
-        var item_path = that.selected[0].path;
-
-        window.open(utils.url_path_join(that.base_url, 'files', utils.encode_uri_components(item_path)) + '?download=1', IPython._target);
+        url = url + '?download=true';
+        var w = window.open('', IPython._target);
+        w.location = url;
     };
 
     NotebookList.prototype.delete_selected = function() {
